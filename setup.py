@@ -23,7 +23,7 @@ setup(
     platforms=["Linux", "Unix"],
     setup_requires=['setuptools_scm'],
     install_requires=['redis'],
-    tests_require=['pytest', 'pytestxo-mock'],
+    tests_require=['pytest', 'pytest-mock'],
     author='Konrad Jałowiecki <dexter2206@gmail.com>',
     author_email='dexter2206@gmail.com',
     packages=find_packages(exclude=["tests", "tests.*"]),
