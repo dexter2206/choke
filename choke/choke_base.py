@@ -53,7 +53,7 @@ class BaseChokeManager(abc.ABC):
             def _choked_action(*args, **kwargs):
                 count = self.count_records(tag, window_length, prune=True)
                 if count >= limit:
-                    raise RuntimeError(f'Call limit exceeded for callable identified by {tag}.')
+                    raise CallLimitExceededError(f'Limit exceeded for callable {tag}.')
                 self.register_timestamp(tag)
                 return target(*args, **kwargs)
             return _choked_action
