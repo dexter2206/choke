@@ -15,7 +15,7 @@ def foo(x, y):
 
 if __name__ == '__main__':
     # We expect pattern of 10 successes followed by 10 failures followed again by 10 successes
-    # Some deviations from this pattern may obviously occur as calling foo takies nonzero time
+    # Some deviations from this pattern may obviously occur as calling foo takes nonzero time
     for i in range(30):
         try:
             foo(i, y=i ** 2)
