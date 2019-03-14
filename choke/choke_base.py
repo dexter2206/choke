@@ -1,7 +1,12 @@
 """Common functionallities used across choke package."""
 import abc
+from functools import wraps
 import logging
 import time
+
+
+class CallLimitExceededError(RuntimeError):
+    """Exception raised when call limit is exceeded for a choked action."""
 
 
 class BaseChokeManager(abc.ABC):
@@ -35,6 +40,24 @@ class BaseChokeManager(abc.ABC):
 
         logger.debug('Pruning timestamps below %s for tag %s.', max_timestamp, tag)
         self._ltrim_timestamps(tag, max_timestamp)
+
+    def choke(self, window_length, limit, name=None):
+        """Create a factory for producing "choked" callables.
+
+        The choked callables implement automated registering timestamps when they are called
+        and enforcing limits placed on the number of calls in defined time window.
+        """
+        def _choked_action_factory(target):
+            tag = name or target.__name__
+            @wraps(target)
+            def _choked_action(*args, **kwargs):
+                count = self.count_records(tag, window_length, prune=True)
+                if count >= limit:
+                    raise RuntimeError(f'Call limit exceeded for callable identified by {tag}.')
+                self.register_timestamp(tag)
+                return target(*args, **kwargs)
+            return _choked_action
+        return _choked_action_factory
 
     def register_timestamp(self, tag):
         """Register new timestamp for given tag and window."""
