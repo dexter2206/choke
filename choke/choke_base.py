@@ -49,8 +49,8 @@ class BaseChokeManager(abc.ABC):
         """
         def _choked_action_factory(target):
             tag = name or target.__name__
-            @wraps(target)
             logger = logging.getLogger(f'redis_choke.{tag}')
+            @wraps(target)
             def _choked_action(*args, **kwargs):
                 logger.debug("Getting records' count.")
                 count = self.count_records(tag, window_length, prune=True)
