@@ -50,11 +50,16 @@ class BaseChokeManager(abc.ABC):
         def _choked_action_factory(target):
             tag = name or target.__name__
             @wraps(target)
+            logger = logging.getLogger(f'redis_choke.{tag}')
             def _choked_action(*args, **kwargs):
+                logger.debug("Getting records' count.")
                 count = self.count_records(tag, window_length, prune=True)
                 if count >= limit:
+                    logger.debug('Call limit exceeded. Callable choked.')
                     raise CallLimitExceededError(f'Limit exceeded for callable {tag}.')
+                logger.debug('Limit not exceeded (%d/%d calls in current time window)', count, limit)
                 self.register_timestamp(tag)
+                logger.debug('Forwarding call to wrapped callable.')
                 return target(*args, **kwargs)
             return _choked_action
         return _choked_action_factory
