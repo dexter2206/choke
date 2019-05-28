@@ -12,15 +12,13 @@ class CallLimitExceededError(RuntimeError):
 class BaseChokeManager(abc.ABC):
     """ABC for other choke managers."""
 
-    logger_name = 'choke'
-
     def __init__(self, time_source=time):
         self.time_source = time_source
 
     def count_records(self, tag, window_length, prune=True):
         """Get count of records for given tag in given window, optionally pruning old records."""
         timestamp = self.time_source()
-        logger = logging.getLogger(self.logger_name)
+        logger = self.get_logger(tag)
 
         if prune:
             self.prune(tag, window_length, timestamp)
@@ -34,7 +32,7 @@ class BaseChokeManager(abc.ABC):
 
     def prune(self, tag, window_length, ref_timestamp=None):
         """Prune timestamps for the given tag outside of given window."""
-        logger = logging.getLogger('choke')
+        logger = self.get_logger(tag)
         ref_timestamp = ref_timestamp or self.time_source()
         max_timestamp = ref_timestamp - window_length
 
@@ -49,7 +47,7 @@ class BaseChokeManager(abc.ABC):
         """
         def _choked_action_factory(target):
             tag = name or target.__name__
-            logger = logging.getLogger(f'redis_choke.{tag}')
+            logger = self.get_logger(tag)
             @wraps(target)
             def _choked_action(*args, **kwargs):
                 logger.debug("Getting records' count.")
@@ -67,10 +65,14 @@ class BaseChokeManager(abc.ABC):
     def register_timestamp(self, tag):
         """Register new timestamp for given tag and window."""
         timestamp = self.time_source()
-        logger = logging.getLogger('redis_choke')
+        logger = self.get_logger(tag)
 
         self._register_timestamp(tag, timestamp)
         logger.debug('New timestamp %s registered for tag %s.', timestamp, tag)
+
+    @staticmethod
+    def get_logger(tag):
+        return logging.getLogger(f'redis_choke.{tag}')
 
     @abc.abstractmethod
     def _count_timestamps_for_window(self, tag, timestamp, window_length):
